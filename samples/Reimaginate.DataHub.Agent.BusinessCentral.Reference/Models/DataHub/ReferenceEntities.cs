@@ -3,6 +3,8 @@ using Reimaginate.DataHub.SharedModels.Core;
 
 namespace Reimaginate.DataHub.Agent.BusinessCentral.Reference.Models.DataHub;
 
+// START HERE: replace these deliberately small contracts with the canonical
+// entity contracts already used by your DataHub.
 [RelatedEntityType("BusinessCentral", "Customer")]
 public sealed class Account : DataHubEntity
 {

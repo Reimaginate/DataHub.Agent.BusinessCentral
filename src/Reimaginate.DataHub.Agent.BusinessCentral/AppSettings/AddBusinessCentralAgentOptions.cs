@@ -5,6 +5,7 @@ namespace Reimaginate.DataHub.Agent.BusinessCentral.AppSettings;
 public class AddBusinessCentralAgentOptions
 {
     internal IConfiguration Config { get; set; } = new ConfigurationBuilder().Build();
+    internal IConfiguration RootConfig { get; set; } = new ConfigurationBuilder().Build();
     internal BusinessCentralAgentOptions BusinessCentralAgentOptions { get; set; } = new();
     internal BusinessCentralServiceOptions BusinessCentralServiceOptions { get; set; } = new();
 
@@ -34,7 +35,8 @@ public class AddBusinessCentralAgentOptions
 
     public AddBusinessCentralAgentOptions WithAppSettingsConfig(IConfiguration config, string key = null)
     {
-        Config = config ?? throw new ArgumentNullException(nameof(config));
+        RootConfig = config ?? throw new ArgumentNullException(nameof(config));
+        Config = RootConfig;
         if (!string.IsNullOrEmpty(key))
         {
             Config = Config.GetSection(key);

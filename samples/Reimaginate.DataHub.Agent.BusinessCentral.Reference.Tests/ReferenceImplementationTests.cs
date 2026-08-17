@@ -1,13 +1,19 @@
 using System.Net;
 using System.Text;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Xunit;
 using Reimaginate.DataHub.Agent.BusinessCentral.AppSettings;
 using Reimaginate.DataHub.Agent.BusinessCentral.Reference;
+using Reimaginate.DataHub.Agent.BusinessCentral.Reference.Configuration;
+using Reimaginate.DataHub.Agent.BusinessCentral.Reference.Hosting;
 using Reimaginate.DataHub.Agent.BusinessCentral.Reference.Mapping;
 using Reimaginate.DataHub.Agent.BusinessCentral.Services.BusinessCentralODataService;
+using Reimaginate.DataHub.Agent.BusinessCentral.Requests.External.MergeUpdatedBusinessCentralEntities;
+using Reimaginate.DataHub.Agent.BusinessCentral.Requests.External.SyncUpdatedDataHubEntities;
 using Reimaginate.DataHub.SharedModels.Core;
+using Reimaginate.Mediator;
 using BCCustomer = Reimaginate.DataHub.Agent.BusinessCentral.Reference.Models.BusinessCentral.Customer;
 using BCItem = Reimaginate.DataHub.Agent.BusinessCentral.Reference.Models.BusinessCentral.Item;
 using BCSalesOrder = Reimaginate.DataHub.Agent.BusinessCentral.Reference.Models.BusinessCentral.SalesOrder;
@@ -33,17 +39,111 @@ public sealed class ReferenceImplementationTests
             ["BusinessCentralAgentOptions:BusinessCentralServiceOptions:CompanyId"] = "YOUR-COMPANY-ID",
             ["BusinessCentralAgentOptions:BusinessCentralServiceOptions:ApiRoute"] = "api/v2.0"
         }).Build();
-        Assert.Equal(2, ReferenceConfiguration.Validate(invalid).Count());
+        Assert.Contains(StarterConfiguration.Validate(invalid), error =>
+            error.Contains("Business Central API environment URL", StringComparison.Ordinal));
+        Assert.Contains(StarterConfiguration.Validate(invalid), error =>
+            error.Contains("DataHubClientUrl", StringComparison.Ordinal));
 
-        var valid = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+        var valid = ValidConfiguration();
+        Assert.Empty(StarterConfiguration.Validate(valid));
+    }
+
+    [Fact]
+    public void WriteGateRequiresExplicitProductionApproval()
+    {
+        var disabled = Assert.Throws<InvalidOperationException>(() =>
+            StarterConfiguration.EnsureWritesAllowed(new StarterOptions(), "Sandbox"));
+        Assert.Contains("WritesEnabled", disabled.Message, StringComparison.Ordinal);
+
+        var production = Assert.Throws<InvalidOperationException>(() =>
+            StarterConfiguration.EnsureWritesAllowed(new StarterOptions { WritesEnabled = true }, "Production"));
+        Assert.Contains("Production writes", production.Message, StringComparison.Ordinal);
+
+        StarterConfiguration.EnsureWritesAllowed(new StarterOptions
         {
+            WritesEnabled = true,
+            AllowProductionWrites = true
+        }, "Production");
+    }
+
+    [Fact]
+    public void StarterRegistersCompleteDataHubAndBusinessCentralPipeline()
+    {
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddBusinessCentralReference(ValidConfiguration());
+
+        using var provider = services.BuildServiceProvider(new ServiceProviderOptions
+        {
+            ValidateOnBuild = true,
+            ValidateScopes = true
+        });
+
+        ReferenceRegistration.ValidateRegistrations(provider);
+    }
+
+    [Fact]
+    public async Task ProcessingPlanUsesReferenceThenDocumentDependencyOrder()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddConfiguration(ValidConfiguration())
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Starter:WritesEnabled"] = "true"
+            })
+            .Build();
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddBusinessCentralReference(configuration);
+        var recorded = new List<Type>();
+        services.AddSingleton(recorded);
+
+        AddRecorder<MergeUpdatedBusinessCentralEntitiesRequest<BCCustomer, DHAccount>>(services);
+        AddRecorder<MergeUpdatedBusinessCentralEntitiesRequest<BCItem, DHProduct>>(services);
+        AddRecorder<MergeUpdatedBusinessCentralEntitiesRequest<BCSalesOrder, DHSalesOrder>>(services);
+        AddRecorder<SyncUpdatedDataHubEntitiesRequest<DHAccount, BCCustomer>>(services);
+        AddRecorder<SyncUpdatedDataHubEntitiesRequest<DHProduct, BCItem>>(services);
+        AddRecorder<SyncUpdatedDataHubEntitiesRequest<DHSalesOrder, BCSalesOrder>>(services);
+        AddRecorder<SyncUpdatedDataHubEntitiesRequest<DHSalesOrderLine, BCSalesOrderLine>>(services);
+
+        using var provider = services.BuildServiceProvider();
+        await using var scope = provider.CreateAsyncScope();
+        await scope.ServiceProvider.GetRequiredService<IEntityProcessingPlan>().RunOnceAsync();
+
+        Assert.Equal(new[]
+        {
+            typeof(MergeUpdatedBusinessCentralEntitiesRequest<BCCustomer, DHAccount>),
+            typeof(MergeUpdatedBusinessCentralEntitiesRequest<BCItem, DHProduct>),
+            typeof(MergeUpdatedBusinessCentralEntitiesRequest<BCSalesOrder, DHSalesOrder>),
+            typeof(SyncUpdatedDataHubEntitiesRequest<DHAccount, BCCustomer>),
+            typeof(SyncUpdatedDataHubEntitiesRequest<DHProduct, BCItem>),
+            typeof(SyncUpdatedDataHubEntitiesRequest<DHSalesOrder, BCSalesOrder>),
+            typeof(SyncUpdatedDataHubEntitiesRequest<DHSalesOrderLine, BCSalesOrderLine>)
+        }, recorded);
+    }
+
+    private static void AddRecorder<TRequest>(IServiceCollection services)
+        where TRequest : IRequest<NullResponse> =>
+        services.AddTransient<IHandler<TRequest, NullResponse>, RecordingHandler<TRequest>>();
+
+    private static IConfiguration ValidConfiguration() =>
+        new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["Starter:WritesEnabled"] = "false",
+            ["Starter:ScheduledProcessingEnabled"] = "false",
+            ["Starter:PollingIntervalSeconds"] = "60",
+            ["Starter:BatchSize"] = "100",
+            ["BusinessCentralAgentOptions:AgentId"] = "reference-tests",
+            ["BusinessCentralAgentOptions:DataSource"] = "BusinessCentral",
+            ["BusinessCentralAgentOptions:Environment"] = "Sandbox",
             ["BusinessCentralAgentOptions:BusinessCentralServiceOptions:BaseUrl"] =
                 "https://api.businesscentral.dynamics.com/v2.0/tenant/Sandbox/",
             ["BusinessCentralAgentOptions:BusinessCentralServiceOptions:CompanyId"] = CompanyId.ToString(),
-            ["BusinessCentralAgentOptions:BusinessCentralServiceOptions:ApiRoute"] = "api/v2.0"
+            ["BusinessCentralAgentOptions:BusinessCentralServiceOptions:ApiRoute"] = "api/v2.0",
+            ["DataHubClientOptions:DataHubClientUrl"] = "https://datahub.example.test/api/Client",
+            ["DataHubClientOptions:AuthenticationMode"] = "ManagedIdentity",
+            ["DataHubClientOptions:AzureAdScope"] = "api://datahub/.default"
         }).Build();
-        Assert.Empty(ReferenceConfiguration.Validate(valid));
-    }
 
     [Fact]
     public async Task InboundMergeAndOutboundRoundTripPreserveOwnedCustomerFields()
@@ -225,6 +325,16 @@ public sealed class ReferenceImplementationTests
             }
             Requests.Add(clone);
             return Task.FromResult(_responses.Dequeue()(request));
+        }
+    }
+
+    private sealed class RecordingHandler<TRequest>(List<Type> recorded) : IHandler<TRequest, NullResponse>
+        where TRequest : IRequest<NullResponse>
+    {
+        public Task<NullResponse> HandleAsync(TRequest request, CancellationToken cancellationToken)
+        {
+            recorded.Add(typeof(TRequest));
+            return Task.FromResult(new NullResponse());
         }
     }
 }

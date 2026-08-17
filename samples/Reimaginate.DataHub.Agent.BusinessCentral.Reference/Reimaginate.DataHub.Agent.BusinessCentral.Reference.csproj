@@ -9,18 +9,17 @@
 
   <ItemGroup>
     <PackageReference Include="Azure.Identity" Version="1.21.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="10.0.10" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.10" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageReference Include="Reimaginate.Mapper" Version="1.3.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\src\Reimaginate.DataHub.Agent.BusinessCentral\Reimaginate.DataHub.Agent.BusinessCentral.csproj" />
-    <ProjectReference Include="..\..\src\Reimaginate.DataHub.Agent.BusinessCentral.Abstractions\Reimaginate.DataHub.Agent.BusinessCentral.Abstractions.csproj" />
+    <PackageReference Include="Reimaginate.Mediator" Version="1.3.0" />
+    <PackageReference Include="Reimaginate.DataHub.Agent.BusinessCentral" Version="1.0.0-beta.2" />
   </ItemGroup>
 
   <ItemGroup>
     <None Update="appsettings.example.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="appsettings.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

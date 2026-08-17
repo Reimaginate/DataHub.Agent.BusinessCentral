@@ -74,7 +74,7 @@ public static class DependencyInjection
                 throw new InvalidOperationException($"Unsupported processing lock repository '{processingLockOptions.UseRepository}'.");
         }
 
-        services.AddDataHubClient(cfg => cfg.WithAppSettingsConfig(addBusinessCentralAgentOptions.Config, "DataHubClientOptions"));
+        services.AddDataHubClient(cfg => cfg.WithAppSettingsConfig(addBusinessCentralAgentOptions.RootConfig, "DataHubClientOptions"));
         services.AddTransient<IBusinessCentralODataService, BusinessCentralODataService>();
         services.AddTransient<IDataHubEntityCache, DataHubEntityCache>();
 

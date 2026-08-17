@@ -3,6 +3,8 @@ using Reimaginate.DataHub.Agent.BusinessCentral.Abstractions.Models;
 
 namespace Reimaginate.DataHub.Agent.BusinessCentral.Reference.Models.BusinessCentral;
 
+// START HERE: retain only the standard API fields your mappings need, then add
+// fields from your Business Central API or extension as your solution grows.
 [BusinessCentralUrl("customers")]
 [BusinessCentralLastModified("lastModifiedDateTime")]
 public sealed class Customer : BusinessCentralDocument, IBusinessCentralIncrementalEntity

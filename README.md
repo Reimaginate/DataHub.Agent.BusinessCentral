@@ -1,7 +1,7 @@
 # DataHub Agent for Business Central
 
 This repository contains the buildable public source snapshot for version
-1.0.0-beta.1 of the Reimaginate DataHub Business Central packages:
+1.0.0-beta.2 of the Reimaginate DataHub Business Central packages:
 
 - `Reimaginate.DataHub.Agent.BusinessCentral.Abstractions`
 - `Reimaginate.DataHub.Agent.BusinessCentral`
@@ -16,31 +16,36 @@ support.
 ## Install
 
 ```powershell
-dotnet add package Reimaginate.DataHub.Agent.BusinessCentral --version 1.0.0-beta.1
-dotnet add package Reimaginate.DataHub.Agent.TestFramework.BusinessCentral --version 1.0.0-beta.1
+dotnet add package Reimaginate.DataHub.Agent.BusinessCentral --version 1.0.0-beta.2
+dotnet add package Reimaginate.DataHub.Agent.TestFramework.BusinessCentral --version 1.0.0-beta.2
 ```
 
 Mapping-only projects may reference
 `Reimaginate.DataHub.Agent.BusinessCentral.Abstractions` directly. The runtime
 package already brings it in transitively.
 
-## Reference implementation
+## Copyable starter implementation
 
-The `samples` directory is a deliberately small reference implementation for:
+The `samples` directory contains a runnable starter that can be copied into a
+consumer solution and connected to an existing DataHub. It includes:
 
 - Data Hub Account and Business Central Customer;
 - Data Hub Product and Business Central Item; and
 - Data Hub Sales Order and Sales Order Line.
 
-It demonstrates model annotations, bidirectional mappings, mapper and agent
-registration, `DefaultAzureCredential`, standard `api/v2.0` routing, optional
-correlation reservations, configuration validation, a read-only smoke command,
-and deterministic tests that do not need a Business Central tenant.
+It demonstrates complete DataHub-client, mapper, mediator, processing-lock and
+closed entity-pair registration; `DefaultAzureCredential`; standard
+`api/v2.0` routing; optional correlation reservations; safe specific and
+incremental merge/sync commands; dependency-ordered background processing; and
+deterministic tests that need no external credentials.
 
 Copy `appsettings.example.json` to a local untracked settings file. Supply Azure
 identity values through the standard Azure Identity environment variables,
 managed identity, workload identity, or your developer login. Never commit a
-client secret.
+client secret. Run `--validate`, then the read-only `--smoke` command, before
+enabling writes. The sample README contains complete DataHub shared-key,
+application-registration and managed-identity examples plus a step-by-step
+copy/customise/deploy guide.
 
 ## Optional correlation extension
 

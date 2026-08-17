@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 using Reimaginate.DataHub.Agent.BusinessCentral.AppSettings;
 using Reimaginate.DataHub.Agent.BusinessCentral.Abstractions.Models;
 using Reimaginate.DataHub.Agent.TestFramework.BusinessCentral;
+using Reimaginate.DataHub.Client;
 using Reimaginate.DataHub.SharedModels.Core;
 using Xunit;
 
@@ -89,6 +90,29 @@ public class BusinessCentralAgentFrameworkTests
             get => GetAttributeValue<string>("number");
             set => SetWithNotification("number", value!);
         }
+    }
+
+    [Fact(DisplayName = "AddBusinessCentralAgent keeps root DataHub client configuration when agent settings use a section")]
+    [Trait("Category", "Unit")]
+    public void AddBusinessCentralAgentKeepsRootDataHubClientConfiguration()
+    {
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["BusinessCentralAgentOptions:AgentId"] = "BusinessCentralTestAgent",
+                ["BusinessCentralAgentOptions:BusinessCentralServiceOptions:BaseUrl"] = "https://businesscentral.example/",
+                ["DataHubClientOptions:AuthenticationMode"] = "SharedKey",
+                ["DataHubClientOptions:DataHubClientUrl"] = "https://datahub.example/api/Client",
+                ["DataHubClientOptions:Key"] = "test-only-key"
+            })
+            .Build();
+
+        var services = new ServiceCollection();
+        services.AddBusinessCentralAgent(options =>
+            options.WithAppSettingsConfig(config, "BusinessCentralAgentOptions"));
+
+        using var provider = services.BuildServiceProvider();
+        provider.GetRequiredService<IDataHubClient>().Should().NotBeNull();
     }
 
     private sealed class TestDataHubEntity : DataHubEntity

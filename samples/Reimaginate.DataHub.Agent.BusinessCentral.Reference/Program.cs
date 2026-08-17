@@ -2,19 +2,26 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Reimaginate.DataHub.Agent.BusinessCentral.Reference;
-using Reimaginate.DataHub.Agent.BusinessCentral.Reference.Models.BusinessCentral;
-using Reimaginate.DataHub.Agent.BusinessCentral.Services.BusinessCentralODataService;
+using Reimaginate.DataHub.Agent.BusinessCentral.Reference.Commands;
+using Reimaginate.DataHub.Agent.BusinessCentral.Reference.Configuration;
 
 var builder = Host.CreateApplicationBuilder(args);
+
+// Keep the precedence visible for users copying the starter:
+// example defaults < local untracked JSON < user-secrets < environment variables.
+builder.Configuration.Sources.Clear();
 builder.Configuration
+    .SetBasePath(AppContext.BaseDirectory)
     .AddJsonFile("appsettings.example.json", optional: false, reloadOnChange: false)
     .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
+    .AddUserSecrets<Program>(optional: true)
     .AddEnvironmentVariables();
 
 builder.Services.AddBusinessCentralReference(builder.Configuration);
+builder.Services.AddScoped<CommandRunner>();
 
-var errors = ReferenceConfiguration.Validate(builder.Configuration).ToArray();
-if (errors.Length > 0)
+var errors = StarterConfiguration.Validate(builder.Configuration);
+if (errors.Count > 0)
 {
     foreach (var error in errors)
     {
@@ -23,36 +30,24 @@ if (errors.Length > 0)
     return 2;
 }
 
-if (args.Contains("--validate", StringComparer.OrdinalIgnoreCase) || args.Length == 0)
+using var host = builder.Build();
+ReferenceRegistration.ValidateRegistrations(host.Services);
+
+if (args.Length == 1 && args[0].Equals("--worker", StringComparison.OrdinalIgnoreCase))
 {
-    await using var validationProvider = builder.Services.BuildServiceProvider();
-    _ = validationProvider.GetRequiredService<IBusinessCentralODataService>();
-    Console.WriteLine("Business Central reference configuration and registrations are valid.");
+    await host.RunAsync();
     return 0;
 }
 
-if (!args.Contains("--read-customers", StringComparer.OrdinalIgnoreCase))
+try
 {
-    Console.Error.WriteLine("Use --validate or --read-customers. The reference host exposes no write command.");
-    return 2;
+    await using var scope = host.Services.CreateAsyncScope();
+    return await scope.ServiceProvider.GetRequiredService<CommandRunner>().RunAsync(args);
 }
-
-await using var provider = builder.Services.BuildServiceProvider();
-var service = provider.GetRequiredService<IBusinessCentralODataService>();
-var response = await service.GetEntitiesAsync<Customer>(top: 5);
-if (response.IsT1)
+catch (Exception exception)
 {
-    Console.Error.WriteLine($"Business Central returned {(int)response.AsT1.StatusCode} {response.AsT1.StatusCode}.");
-    return 1;
-}
-if (response.IsT2)
-{
-    Console.Error.WriteLine(response.AsT2.Message);
+    Console.Error.WriteLine(exception.Message);
     return 1;
 }
 
-foreach (var customer in response.AsT0.Value)
-{
-    Console.WriteLine($"{customer.Id}: {customer.Number} - {customer.DisplayName}");
-}
-return 0;
+public partial class Program;

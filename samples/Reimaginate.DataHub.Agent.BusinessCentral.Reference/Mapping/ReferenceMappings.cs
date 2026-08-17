@@ -16,6 +16,8 @@ using DHSalesOrderLine = Reimaginate.DataHub.Agent.BusinessCentral.Reference.Mod
 
 namespace Reimaginate.DataHub.Agent.BusinessCentral.Reference.Mapping;
 
+// START HERE: these maps are the solution's field-ownership boundary. Outbound
+// maps should omit Business Central-calculated values; inbound maps preserve them.
 public sealed class MapAccountToCustomer :
     ITypeMapper<DHAccount, BCCustomer>,
     IDataHubTypeMapper<DHAccount, BCCustomer>
