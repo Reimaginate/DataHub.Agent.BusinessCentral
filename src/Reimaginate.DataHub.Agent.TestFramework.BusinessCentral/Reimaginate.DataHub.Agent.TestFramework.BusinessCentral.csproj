@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);IncludeBusinessCentralSharedTestSupportBuildOutput</TargetsForTfmSpecificBuildOutput>
+    <TargetsForTfmSpecificDebugSymbolsInPackage>$(TargetsForTfmSpecificDebugSymbolsInPackage);IncludeBusinessCentralSharedTestSupportDebugSymbols</TargetsForTfmSpecificDebugSymbolsInPackage>
+    <Description>Business Central-specific test framework helpers for exercising Reimaginate DataHub agent integrations.</Description>
+    <PackageTags>datahub;business-central;testing;test-framework</PackageTags>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Azure.Identity" Version="1.21.0" />
+    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.62.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.10" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="10.0.10" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.10" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.10" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.10" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+    <PackageReference Include="Reimaginate.DataHub" Version="1.4.0" />
+    <PackageReference Include="Reimaginate.DataHub.TestFramework" Version="1.4.0" />
+    <PackageReference Include="Reimaginate.Mapper" Version="1.3.0" />
+    <PackageReference Include="Reimaginate.Test.Framework" Version="1.3.0" />
+    <PackageReference Include="SSH.NET" Version="2026.0.0" />
+    <PackageReference Include="Testcontainers" Version="4.13.0" />
+    <PackageReference Include="Testcontainers.CosmosDb" Version="4.13.0" />
+    <PackageReference Include="xunit.v3.extensibility.core" Version="3.2.2" PrivateAssets="all" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Reimaginate.DataHub.Agent.BusinessCentral\Reimaginate.DataHub.Agent.BusinessCentral.csproj" />
+    <PackageReference Include="Reimaginate.DataHub.Agent.TestFramework" Version="1.4.0" />
+    <ProjectReference Include="..\..\test\Reimaginate.DataHub.Agent.BusinessCentral.Tests.Shared\Reimaginate.DataHub.Agent.BusinessCentral.Tests.Shared.csproj" PrivateAssets="all" />
+  </ItemGroup>
+  <Target Name="IncludeBusinessCentralSharedTestSupportBuildOutput">
+    <PropertyGroup>
+      <_BusinessCentralSharedTestSupportPath>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)\..\..\test\Reimaginate.DataHub.Agent.BusinessCentral.Tests.Shared\bin\$(Configuration)\$(TargetFramework)\Reimaginate.DataHub.Agent.BusinessCentral.Tests.Shared.dll'))</_BusinessCentralSharedTestSupportPath>
+    </PropertyGroup>
+    <ItemGroup>
+      <_BusinessCentralSharedTestSupport Include="$(_BusinessCentralSharedTestSupportPath)" Condition="Exists('$(_BusinessCentralSharedTestSupportPath)')" />
+      <BuildOutputInPackage Include="@(_BusinessCentralSharedTestSupport)">
+        <FinalOutputPath>%(_BusinessCentralSharedTestSupport.FullPath)</FinalOutputPath>
+        <TargetPath>%(_BusinessCentralSharedTestSupport.Filename)%(_BusinessCentralSharedTestSupport.Extension)</TargetPath>
+      </BuildOutputInPackage>
+    </ItemGroup>
+    <Error Condition="'@(_BusinessCentralSharedTestSupport)' == ''" Text="The Business Central shared test-support assembly was not built before packaging." />
+  </Target>
+  <Target Name="IncludeBusinessCentralSharedTestSupportDebugSymbols">
+    <PropertyGroup>
+      <_BusinessCentralSharedTestSupportSymbolsPath>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)\..\..\test\Reimaginate.DataHub.Agent.BusinessCentral.Tests.Shared\bin\$(Configuration)\$(TargetFramework)\Reimaginate.DataHub.Agent.BusinessCentral.Tests.Shared.pdb'))</_BusinessCentralSharedTestSupportSymbolsPath>
+    </PropertyGroup>
+    <ItemGroup>
+      <_BusinessCentralSharedTestSupportSymbols Include="$(_BusinessCentralSharedTestSupportSymbolsPath)" Condition="Exists('$(_BusinessCentralSharedTestSupportSymbolsPath)')" />
+      <TfmSpecificDebugSymbolsFile Include="@(_BusinessCentralSharedTestSupportSymbols)">
+        <TargetFramework>$(TargetFramework)</TargetFramework>
+        <TargetPath>%(_BusinessCentralSharedTestSupportSymbols.Filename)%(_BusinessCentralSharedTestSupportSymbols.Extension)</TargetPath>
+      </TfmSpecificDebugSymbolsFile>
+    </ItemGroup>
+    <Error Condition="'@(_BusinessCentralSharedTestSupportSymbols)' == ''" Text="The Business Central shared test-support symbols were not built before packaging." />
+  </Target>
+</Project>

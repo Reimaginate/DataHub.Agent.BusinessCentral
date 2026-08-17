@@ -1,0 +1,9 @@
+<Solution>
+  <Project Path="samples/Reimaginate.DataHub.Agent.BusinessCentral.Reference.Tests/Reimaginate.DataHub.Agent.BusinessCentral.Reference.Tests.csproj" />
+  <Project Path="samples/Reimaginate.DataHub.Agent.BusinessCentral.Reference/Reimaginate.DataHub.Agent.BusinessCentral.Reference.csproj" />
+  <Project Path="src/Reimaginate.DataHub.Agent.BusinessCentral.Abstractions/Reimaginate.DataHub.Agent.BusinessCentral.Abstractions.csproj" />
+  <Project Path="src/Reimaginate.DataHub.Agent.BusinessCentral/Reimaginate.DataHub.Agent.BusinessCentral.csproj" />
+  <Project Path="src/Reimaginate.DataHub.Agent.TestFramework.BusinessCentral/Reimaginate.DataHub.Agent.TestFramework.BusinessCentral.csproj" />
+  <Project Path="test/Reimaginate.DataHub.Agent.BusinessCentral.Tests.Shared/Reimaginate.DataHub.Agent.BusinessCentral.Tests.Shared.csproj" />
+  <Project Path="test/Reimaginate.DataHub.Agent.BusinessCentral.Tests/Reimaginate.DataHub.Agent.BusinessCentral.Tests.Unit.csproj" />
+</Solution>
