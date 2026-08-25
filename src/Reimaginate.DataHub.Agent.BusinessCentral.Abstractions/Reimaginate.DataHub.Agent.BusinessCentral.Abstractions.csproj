@@ -11,7 +11,7 @@
 
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
-    <PackageReference Include="Reimaginate.DataHub.SharedModels" Version="1.4.0" />
+    <PackageReference Include="Reimaginate.DataHub.SharedModels" Version="1.4.1" />
   </ItemGroup>
 
 </Project>

@@ -1,7 +1,7 @@
 # DataHub Agent for Business Central
 
 This repository contains the buildable public source snapshot for version
-1.0.0-beta.2 of the Reimaginate DataHub Business Central packages:
+1.0.0-beta.3 of the Reimaginate DataHub Business Central packages:
 
 - `Reimaginate.DataHub.Agent.BusinessCentral.Abstractions`
 - `Reimaginate.DataHub.Agent.BusinessCentral`
@@ -16,8 +16,8 @@ support.
 ## Install
 
 ```powershell
-dotnet add package Reimaginate.DataHub.Agent.BusinessCentral --version 1.0.0-beta.2
-dotnet add package Reimaginate.DataHub.Agent.TestFramework.BusinessCentral --version 1.0.0-beta.2
+dotnet add package Reimaginate.DataHub.Agent.BusinessCentral --version 1.0.0-beta.3
+dotnet add package Reimaginate.DataHub.Agent.TestFramework.BusinessCentral --version 1.0.0-beta.3
 ```
 
 Mapping-only projects may reference
